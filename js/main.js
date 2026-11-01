@@ -1293,5 +1293,5 @@
   (document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]) : Promise.resolve())
     .then(() => setTimeout(go, 450));
 
-  window.__haptic = { tl, S }; // depuración
+  window.__haptic = { tl, S, frame, fit }; // depuración y renderizado offline
 })();
