@@ -285,6 +285,9 @@
     </div>
   </div>
 
+  <!-- ===================================================== AVISO DE GRABACIÓN (fuera de #stage) -->
+  <div id="recNotice" class="hidden"></div>
+
   <!-- ===================================================== CONTROLES -->
   <div id="controls">
     <button class="ctl-btn primary" id="btnPlay" title="Play / Pausa (Espacio)">
@@ -304,6 +307,10 @@
       <div id="barHead"></div>
     </div>
     <button class="ctl-btn text" id="btnSpeed" title="Velocidad de reproducción (V)">1×</button>
+    <button class="ctl-btn text" id="btnMic" title="Incluir micrófono al grabar para narrar el guion (M)">🎙 MIC: OFF</button>
+    <button class="ctl-btn text rec" id="btnRec" title="Grabar en video SOLO la presentación, sin controles ni teleprónter (G · Shift+clic graba desde el punto actual)">
+      <span class="rec-dot"></span><span id="recLbl">GRABAR</span>
+    </button>
     <button class="ctl-btn text on" id="btnPrompter" title="Teleprónter (T)">TELEPRÓNTER</button>
     <button class="ctl-btn" id="btnFs" title="Pantalla completa (F)">
       <svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>

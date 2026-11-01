@@ -25,5 +25,7 @@ Abre `index.html` directamente en cualquier navegador moderno (todas las depende
 - **Barra de progreso o teclas `1`, `2`, `3`, `4`:** Saltar a cualquier instante o escena
 - **`←` / `→` (`Shift` para `±15 s`):** Retroceder / avanzar `5 s`
 - **`T` o botón `TELEPRÓNTER` (`+` / `-`):** Mostrar / ocultar guion sincronizado y ajustar tamaño de letra
+- **`G` o botón `● GRABAR` (`Shift` + clic para grabar desde el punto actual):** Graba en video (`.mp4` / `.webm` a `60 FPS`) **exclusivamente el recuadro de la presentación**, excluyendo la barra de controles y el teleprónter para poder leer el guion en vivo mientras se graba
+- **`M` o botón `🎙 MIC`:** Activa o desactiva la grabación de micrófono junto con el video
 - **`V` o botón `1×`:** Cambiar velocidad de reproducción (`1×`, `1.5×`, `2×`, `0.5×`)
 - **`F`:** Pantalla completa · **`R`:** Reiniciar

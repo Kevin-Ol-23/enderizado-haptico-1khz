@@ -75,7 +75,8 @@
   const vp = $('#viewport'), stage = $('#stage');
   let prompterReady = false;
   function fit() {
-    const s = Math.min(vp.clientWidth / 1920, vp.clientHeight / 1080);
+    const pad = 12;
+    const s = Math.max(.1, Math.min((vp.clientWidth - pad) / 1920, (vp.clientHeight - pad) / 1080));
     stage.style.transform = `translate(-50%, -50%) scale(${s})`;
     const dpr = window.devicePixelRatio || 1;
     setRatio(Math.round(clamp(dpr * s, 1, 2) * 4) / 4);
@@ -973,7 +974,208 @@
     btnSpeed.textContent = sp + '×';
     btnSpeed.classList.toggle('on', sp !== 1);
   }
-  tl.eventCallback('onComplete', () => setPlaying(false));
+  tl.eventCallback('onComplete', () => {
+    setPlaying(false);
+    if (recActive) setTimeout(stopRecording, 450);
+  });
+
+  /* =================================================================
+     GRABADOR DE VIDEO · Captura EXCLUSIVAMENTE #stage (sin controles ni teleprónter)
+     ================================================================= */
+  const btnRec = $('#btnRec'), recLbl = $('#recLbl'), btnMic = $('#btnMic'), recNotice = $('#recNotice');
+  let micEnabled = false, recActive = false, recorder = null, recChunks = [];
+  let dispStream = null, micStream = null, recCropStream = null, recCropVid = null, recCropPump = null;
+  let recStartMs = 0, recTimerId = null, noticeTimer = null;
+
+  function showNotice(msg, ok = false, autoHideMs = 0) {
+    clearTimeout(noticeTimer);
+    recNotice.textContent = msg;
+    recNotice.classList.toggle('ok', ok);
+    recNotice.classList.remove('hidden');
+    requestAnimationFrame(fit);
+    if (autoHideMs > 0) {
+      noticeTimer = setTimeout(() => { recNotice.classList.add('hidden'); requestAnimationFrame(fit); }, autoHideMs);
+    }
+  }
+
+  function toggleMic() {
+    if (recActive) return;
+    micEnabled = !micEnabled;
+    btnMic.textContent = micEnabled ? '🎙 MIC: ON' : '🎙 MIC: OFF';
+    btnMic.classList.toggle('on', micEnabled);
+  }
+  btnMic.addEventListener('click', toggleMic);
+
+  function pickMimeType() {
+    const types = [
+      'video/mp4;codecs=avc1.64002A,mp4a.40.2',
+      'video/mp4;codecs=avc1.42E01F,mp4a.40.2',
+      'video/mp4',
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm'
+    ];
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+    return types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+  }
+
+  function cleanupRecStreams() {
+    clearInterval(recTimerId);
+    recTimerId = null;
+    if (recCropPump) { gsap.ticker.remove(recCropPump); recCropPump = null; }
+    if (recCropVid) { recCropVid.pause(); recCropVid.srcObject = null; recCropVid = null; }
+    [recCropStream, dispStream, micStream].forEach(st => {
+      if (st) st.getTracks().forEach(tr => tr.stop());
+    });
+    recCropStream = dispStream = micStream = null;
+    stage.classList.remove('recording');
+    btnRec.classList.remove('recording');
+    recLbl.textContent = 'GRABAR';
+    requestAnimationFrame(fit);
+  }
+
+  async function startRecording(fromCurrent = false) {
+    if (recActive) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      showNotice('⚠ Tu navegador no soporta captura de pestaña. Usa Chrome o Edge.', false, 7000);
+      return;
+    }
+    tl.pause();
+    setPlaying(false);
+
+    try {
+      if (micEnabled) {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+      }
+      dispStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: 'browser', frameRate: { ideal: 60, max: 60 } },
+        audio: false,
+        preferCurrentTab: true,
+        selfBrowserSurface: 'include',
+        surfaceSwitching: 'exclude'
+      });
+    } catch (err) {
+      cleanupRecStreams();
+      showNotice('Grabación cancelada.', false, 3500);
+      return;
+    }
+
+    const vTrack = dispStream.getVideoTracks()[0];
+    const settings = vTrack.getSettings ? vTrack.getSettings() : {};
+    if (settings.displaySurface && settings.displaySurface !== 'browser') {
+      cleanupRecStreams();
+      showNotice('⚠ Elige "Esta pestaña" al compartir para recortar SOLO la presentación (sin controles ni teleprónter).', false, 8000);
+      return;
+    }
+
+    // Fija el aviso y esquinas rectas ANTES de medir y recortar #stage
+    showNotice('● GRABANDO SOLO LA PRESENTACIÓN · Puedes usar controles y leer el teleprónter sin que salgan en el video');
+    stage.classList.add('recording');
+    fit();
+
+    let outVideoTrack = vTrack;
+    let croppedNatively = false;
+    if (window.CropTarget && typeof vTrack.cropTo === 'function') {
+      try {
+        const cropTarget = await CropTarget.fromElement(stage);
+        await vTrack.cropTo(cropTarget);
+        croppedNatively = true;
+      } catch (e) { croppedNatively = false; }
+    }
+
+    recActive = true;
+    if (!croppedNatively) {
+      recCropVid = document.createElement('video');
+      recCropVid.muted = true;
+      recCropVid.playsInline = true;
+      recCropVid.srcObject = dispStream;
+      await recCropVid.play();
+      const cropCv = document.createElement('canvas');
+      cropCv.width = 1920;
+      cropCv.height = 1080;
+      const cropCtx = cropCv.getContext('2d', { alpha: false });
+      recCropPump = () => {
+        if (!recActive || !recCropVid) return;
+        const vw = recCropVid.videoWidth, vh = recCropVid.videoHeight;
+        if (!vw || !vh) return;
+        const sc = Math.min(vw / window.innerWidth, vh / window.innerHeight);
+        const ox = (vw - window.innerWidth * sc) / 2;
+        const oy = (vh - window.innerHeight * sc) / 2;
+        const r = stage.getBoundingClientRect();
+        cropCtx.drawImage(recCropVid, ox + r.left * sc, oy + r.top * sc, r.width * sc, r.height * sc, 0, 0, 1920, 1080);
+      };
+      gsap.ticker.add(recCropPump);
+      recCropPump();
+      recCropStream = cropCv.captureStream(60);
+      outVideoTrack = recCropStream.getVideoTracks()[0];
+    }
+
+    vTrack.addEventListener('ended', () => { if (recActive) stopRecording(); });
+
+    if (!fromCurrent) seek(0);
+    // Espera breve a que se cierre el diálogo del navegador antes de iniciar el video
+    await new Promise(r => setTimeout(r, 450));
+    if (!recActive) return;
+
+    const tracks = [outVideoTrack];
+    if (micStream) tracks.push(...micStream.getAudioTracks());
+    const outStream = new MediaStream(tracks);
+    const mimeType = pickMimeType();
+    const recOpts = { videoBitsPerSecond: 12_000_000 };
+    if (mimeType) recOpts.mimeType = mimeType;
+
+    recChunks = [];
+    recorder = new MediaRecorder(outStream, recOpts);
+    recorder.ondataavailable = e => { if (e.data && e.data.size > 0) recChunks.push(e.data); };
+    recorder.onstop = () => {
+      const usedMime = recorder.mimeType || mimeType || 'video/webm';
+      const ext = usedMime.includes('mp4') ? 'mp4' : 'webm';
+      const blob = new Blob(recChunks, { type: usedMime });
+      recChunks = [];
+      if (blob.size > 0) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const fname = `Renderizado-Haptico-1kHz.${ext}`;
+        a.href = url;
+        a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 15000);
+        showNotice(`✓ Video guardado: ${fname} (solo el cuadro de presentación)`, true, 8000);
+      } else {
+        recNotice.classList.add('hidden');
+      }
+      cleanupRecStreams();
+    };
+
+    recorder.start(1000);
+    recStartMs = Date.now();
+    btnRec.classList.add('recording');
+    recLbl.textContent = 'DETENER · 00:00';
+    recTimerId = setInterval(() => {
+      recLbl.textContent = 'DETENER · ' + fmt((Date.now() - recStartMs) / 1000);
+    }, 500);
+
+    tl.play();
+    setPlaying(true);
+  }
+
+  function stopRecording() {
+    if (!recActive) return;
+    recActive = false;
+    tl.pause();
+    setPlaying(false);
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    else cleanupRecStreams();
+  }
+
+  btnRec.addEventListener('click', e => {
+    if (recActive) stopRecording();
+    else startRecording(e.shiftKey);
+  });
 
   btnPlay.addEventListener('click', togglePlay);
   vp.addEventListener('click', togglePlay);
@@ -1061,6 +1263,8 @@
       case 'ArrowLeft':  e.preventDefault(); seek(tl.time() - (e.shiftKey ? 15 : 5)); break;
       case 'r': case 'R': tl.time(0); tl.play(); setPlaying(true); break;
       case 'v': case 'V': cycleSpeed(); break;
+      case 'm': case 'M': toggleMic(); break;
+      case 'g': case 'G': if (recActive) stopRecording(); else startRecording(e.shiftKey); break;
       case 't': case 'T': setPrompter(prompter.classList.contains('hidden')); break;
       case 'f': case 'F': toggleFs(); break;
       case '+': case '=': setPrSize(prSize + 2); break;

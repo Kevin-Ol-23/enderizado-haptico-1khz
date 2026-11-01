@@ -34,6 +34,7 @@ button { font: inherit; cursor: pointer; }
   transform: translate(-50%, -50%) scale(.5);
   border-radius: 6px;
 }
+#stage.recording { border-radius: 0; }
 #stage.paused *, #stage.paused *::before, #stage.paused *::after { animation-play-state: paused !important; }
 #bg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
 .vignette { position: absolute; inset: 0; pointer-events: none; z-index: 1;
@@ -312,8 +313,21 @@ button { font: inherit; cursor: pointer; }
 .ctl-btn.primary .i-pause { display: none; }
 .ctl-btn.primary.playing .i-play { display: none; }
 .ctl-btn.primary.playing .i-pause { display: block; }
-.ctl-btn.text { font: 800 13px var(--mono); letter-spacing: .06em; padding: 0 14px; }
+.ctl-btn.text { font: 800 13px var(--mono); letter-spacing: .06em; padding: 0 14px; white-space: nowrap; }
 .ctl-btn.text.on { background: var(--blue); border-color: var(--blue); }
+.ctl-btn.rec { display: inline-flex; align-items: center; gap: 8px; border-color: #55252A; }
+.ctl-btn.rec .rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); flex: none; }
+.ctl-btn.rec.recording { background: var(--red); border-color: var(--red); color: #fff; animation: recPulse 1s ease-in-out infinite alternate; }
+.ctl-btn.rec.recording .rec-dot { background: #fff; border-radius: 2px; }
+@keyframes recPulse { from { opacity: 1; } to { opacity: .78; } }
+
+#recNotice {
+  flex: 0 0 32px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 0 18px; background: #261618; border-top: 1px solid #4A2228;
+  color: #FFE4E8; font: 700 13px var(--mono); letter-spacing: .02em;
+}
+#recNotice.ok { background: #10261E; border-top-color: #1F513F; color: #D4FCEB; }
+#recNotice.hidden { display: none; }
 .time { font: 700 15px var(--mono); white-space: nowrap; color: #CFCFC8; }
 .time .sep { margin: 0 6px; color: #66665F; }
 #bar { flex: 1; position: relative; height: 30px; background: #2A2A27; border-radius: 10px; cursor: pointer; overflow: hidden; touch-action: none; }
