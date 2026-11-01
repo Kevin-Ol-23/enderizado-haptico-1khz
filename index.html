@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Renderizado Háptico en Cirugía Robótica · La Barrera de 1 kHz</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================================================== ESCENARIO 1920x1080 -->
+  <div id="viewport" title="Clic para reproducir / pausar">
+    <div id="stage">
+      <canvas id="bg" width="1920" height="1080"></canvas>
+      <div class="vignette"></div>
+      <div id="alertTint"></div>
+
+      <!-- HUD -->
+      <div class="hud">
+        <div class="chip"><span class="dot"></span>HÁPTICA · 1 kHz</div>
+        <div class="chip ink" id="hudScene">01 · INTRODUCCIÓN</div>
+      </div>
+
+      <!-- ================================================= ESCENA 1 · INTRO -->
+      <section class="scene" id="s1">
+        <div class="title-block" id="s1Title">
+          <div class="chip kicker" id="s1Kicker">Proyecto universitario · Física Mecánica × Ingeniería de Sistemas</div>
+          <h1 class="mega">
+            <span class="line"><span id="s1L1">RENDERIZADO</span></span>
+            <span class="line"><span id="s1L2">HÁPTICO</span></span>
+          </h1>
+          <div class="sub" id="s1Sub">en Cirugía Robótica</div>
+          <div class="badge-1khz" id="s1Badge">LA BARRERA DE <b>1 kHz</b></div>
+          <div class="authors" id="s1Authors">
+            <span class="authors-kicker">PRESENTADO POR</span>
+            <span class="author-card"><i class="a-dot blue"></i>Kevin Oliveros</span>
+            <span class="authors-amp">&amp;</span>
+            <span class="author-card"><i class="a-dot orange"></i>Daniela Cubides</span>
+          </div>
+        </div>
+
+        <div class="s-head" id="s1Head"><span class="idx">01</span><h2>VER <em>vs</em> SENTIR</h2><span class="chip">cirugía virtual</span></div>
+
+        <div class="s1-slot left" id="slotVision">
+          <div class="card">
+            <div class="card-head blue"><span>VISTA HUMANA</span><b>60 Hz</b></div>
+            <canvas id="cvVision" width="790" height="440"></canvas>
+            <div class="card-foot"><span class="big mono">16.7 ms</span><span>por cuadro · el ojo ya percibe <b>fluidez</b></span></div>
+          </div>
+        </div>
+
+        <div class="vs" id="vsBadge">VS</div>
+
+        <div class="s1-slot right" id="slotTouch">
+          <div class="card" id="touchCard">
+            <div class="card-head orange" id="touchHead"><span>TACTO HUMANO</span><b id="touchHz">1,000 Hz</b></div>
+            <canvas id="cvTouch" width="790" height="440"></canvas>
+            <div class="card-foot"><span class="big mono" id="touchMs">1 ms</span><span id="touchMsg">por actualización · contacto <b>sólido y estable</b></span></div>
+          </div>
+        </div>
+
+        <div class="sticker" id="s1Sticker">20 ms · ¡20× más lento!</div>
+
+        <div class="alert" id="alert">
+          <span class="siren"></span>
+          <span>ALERTA ROJA · A 50 Hz EL BISTURÍ VIBRA</span>
+          <span class="alert-sub">INESTABILIDAD HÁPTICA</span>
+        </div>
+      </section>
+
+      <!-- ================================================= ESCENA 2 · TEORÍA -->
+      <section class="scene" id="s2">
+        <div class="sec-intro" id="s2Intro">
+          <div class="sec-num">02</div>
+          <div class="sec-title"><span>FUNDAMENTACIÓN</span><span class="hl-blue">TEÓRICA</span></div>
+          <div class="chip sec-sub">El modelo resorte–amortiguador del god-object</div>
+        </div>
+
+        <div class="s-head" id="s2Head"><span class="idx">02</span><h2>EL <em>GOD-OBJECT</em></h2><span class="chip">fundamentación teórica</span></div>
+
+        <div class="card s2-card" id="s2Card">
+          <div class="chip tag">Tejido virtual · corte transversal</div>
+          <canvas id="cvTissue" width="1000" height="774"></canvas>
+          <div class="sticker sticker-blue" id="s2Sticker">resuelto 1,000 veces / segundo</div>
+        </div>
+
+        <div class="scrim" id="s2Scrim"></div>
+
+        <div class="card eq-card" id="eqHooke">
+          <div class="eq-label"><span class="chip orange">Ley de Hooke</span><span class="mini">resorte virtual</span></div>
+          <div class="eq" data-tex="F_{\text{elástica}} = -k_t\,(P_{\text{mano}} - P_{\text{virtual}})"></div>
+        </div>
+
+        <div class="card eq-card" id="eqDamp">
+          <div class="eq-label"><span class="chip blue">Amortiguamiento viscoso</span><span class="mini">disipa energía</span></div>
+          <div class="eq" data-tex="F_{\text{amortiguamiento}} = -b_t\,(V_{\text{mano}} - V_{\text{virtual}})"></div>
+        </div>
+
+        <div class="card eq-card master" id="eqMaster">
+          <div class="eq-label"><span class="chip ink">Ecuación maestra · 6-DoF</span></div>
+          <div class="eq" data-tex="F_{\text{háptica}} = -k_t\,\Delta x \;-\; b_t\,\Delta v"></div>
+          <div class="dof" id="dof">
+            <span>X</span><span>Y</span><span>Z</span><span class="rot">Roll</span><span class="rot">Pitch</span><span class="rot">Yaw</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================= ESCENA 3 · SIMULACIÓN -->
+      <section class="scene" id="s3">
+        <div class="sec-intro" id="s3Intro">
+          <div class="sec-num">03</div>
+          <div class="sec-title"><span>SIMULACIÓN</span><span class="hl-orange">Y CÁLCULO</span></div>
+          <div class="chip sec-sub">Contacto bisturí – hueso, en vivo</div>
+        </div>
+
+        <div class="s-head" id="s3Head"><span class="idx">03</span><h2>CONTACTO CON <em>HUESO</em></h2><span class="chip">simulación y cálculo</span></div>
+        <div class="s-head" id="s3Head2"><span class="idx">03</span><h2>ARQUITECTURA DE <em>3 HILOS</em></h2><span class="chip">50 Hz → 1,000 Hz</span></div>
+
+        <!-- Fase A: tarjetas -->
+        <div class="params" id="params">
+          <div class="chip param" data-tex="k_t = 1200\ \text{N/m}"></div>
+          <div class="chip param" data-tex="b_t = 15\ \text{N}\cdot\text{s/m}"></div>
+          <div class="chip param" data-tex="\Delta x = 0.004\ \text{m}"></div>
+          <div class="chip param" data-tex="\Delta v = 0.10\ \text{m/s}"></div>
+        </div>
+
+        <div class="card calc" id="calc1">
+          <div class="calc-head"><span class="chip orange">01</span>FUERZA ELÁSTICA</div>
+          <div class="eq" data-tex="F_k = -k_t\,\Delta x"></div>
+          <div class="eq subst" id="sub1" data-tex="= -(1200)(0.004)"></div>
+          <div class="calc-result"><span class="num" id="fkNum">0.0</span><span class="unit">N</span></div>
+          <div class="meter"><i id="fkBar"></i></div>
+        </div>
+
+        <div class="card calc" id="calc2">
+          <div class="calc-head"><span class="chip blue">02</span>AMORTIGUAMIENTO</div>
+          <div class="eq" data-tex="F_b = -b_t\,\Delta v"></div>
+          <div class="eq subst" id="sub2" data-tex="= -(15)(0.10)"></div>
+          <div class="calc-result"><span class="num" id="fbNum">0.0</span><span class="unit">N</span></div>
+          <div class="meter"><i id="fbBar"></i></div>
+        </div>
+
+        <div class="card calc total" id="calc3">
+          <div class="calc-head"><span class="chip ink">03</span>FUERZA TOTAL</div>
+          <div class="eq" data-tex="F_{\text{total}} = F_k + F_b"></div>
+          <div class="eq subst" id="sub3" data-tex="= (-4.8) + (-1.5)"></div>
+          <div class="calc-result"><span class="num" id="ftNum">0.0</span><span class="unit">N</span></div>
+          <div class="meter"><i id="ftBar"></i></div>
+        </div>
+
+        <div class="note" id="signNote"><b>(−)</b> el robot <b>empuja</b> la mano del cirujano hacia afuera del hueso</div>
+
+        <!-- Fase B: gráfica -->
+        <div class="card graph-card" id="graphCard">
+          <div class="graph-head">
+            <span class="g-title">F(t) · CONTACTO CON HUESO</span>
+            <span class="legend" id="leg1"><i class="sw blue"></i>1,000 Hz · Δt = 1 ms · suave</span>
+            <span class="legend" id="leg2"><i class="sw red"></i>50 Hz · Δt = 20 ms · escalones inestables</span>
+          </div>
+          <canvas id="cvGraph" width="1710" height="705"></canvas>
+        </div>
+
+        <!-- Fase C: arquitectura de 3 hilos -->
+        <svg id="pipeSvg" width="1920" height="1080" viewBox="0 0 1920 1080">
+          <defs>
+            <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto">
+              <path d="M0,0.8 L10,5 L0,9.2 Z" fill="#141413"/>
+            </marker>
+          </defs>
+          <path id="pipeGhost" d="M520,705 C605,705 595,448 680,448 M1230,448 C1315,448 1305,705 1390,705" fill="none" stroke="rgba(20,20,19,.13)" stroke-width="10" stroke-dasharray="4 18" stroke-linecap="round"/>
+          <path id="pipe1" pathLength="1" d="M520,705 C605,705 595,448 680,448" fill="none" stroke="#141413" stroke-width="10" stroke-linecap="round" stroke-dasharray="1 1" stroke-dashoffset="1"/>
+          <path id="pipe2" pathLength="1" d="M1230,448 C1315,448 1305,705 1390,705" fill="none" stroke="#141413" stroke-width="10" stroke-linecap="round" stroke-dasharray="1 1" stroke-dashoffset="1"/>
+          <g id="packets"></g>
+        </svg>
+
+        <div class="card node" id="node1">
+          <span class="chip ink">Hilo 1</span>
+          <div class="node-title">Detección de colisiones</div>
+          <div class="node-big">50 Hz</div>
+          <svg class="node-mini" viewBox="0 0 360 72" width="360" height="72">
+            <line x1="10" y1="50" x2="350" y2="50" stroke="#141413" stroke-width="4"/>
+            <g fill="#141413">
+              <rect x="20" y="14" width="10" height="36" rx="3"/><rect x="100" y="14" width="10" height="36" rx="3"/><rect x="180" y="14" width="10" height="36" rx="3"/><rect x="260" y="14" width="10" height="36" rx="3"/><rect x="340" y="14" width="10" height="36" rx="3"/>
+            </g>
+            <text x="65" y="68" font-family="JetBrains Mono" font-size="14" font-weight="700" fill="#141413">Δt = 20 ms</text>
+          </svg>
+          <div class="node-foot">geometría compleja · lenta</div>
+        </div>
+
+        <div class="card node node-main" id="node2">
+          <span class="chip orange">Hilo 2</span>
+          <div class="node-title">Predicción · serie de tiempo AR(2)</div>
+          <div class="eq ar" id="ar0" data-tex="F_{t+1} = 1.6\,F_t - 0.6\,F_{t-1}"></div>
+          <div class="eq ar" id="ar1" data-tex="= 1.6(6.0) - 0.6(5.5)"></div>
+          <div class="eq ar" id="ar2" data-tex="= 9.6 - 3.3"></div>
+          <div class="eq ar ar-res" id="ar3" data-tex="= 6.3\ \text{N}"></div>
+        </div>
+
+        <div class="card node" id="node3">
+          <span class="chip blue">Hilo 3</span>
+          <div class="node-title">Interpolación cúbica</div>
+          <div class="node-big blue">1,000 Hz</div>
+          <svg class="node-mini" viewBox="0 0 360 88" width="360" height="88">
+            <g id="combTicks" stroke="#0284C7" stroke-width="1.5"></g>
+            <path id="cubicPath" pathLength="1" d="" fill="none" stroke="#0284C7" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 1" stroke-dashoffset="1"/>
+            <g id="cubicDots" fill="#141413"></g>
+          </svg>
+          <div class="node-foot">fuerza nueva cada 1 ms → motor</div>
+        </div>
+
+        <div class="tagline" id="tagline">50 Hz de física pesada <span>➜</span> 1,000 Hz de tacto suave</div>
+      </section>
+
+      <!-- ================================================= ESCENA 4 · CONCLUSIONES -->
+      <section class="scene" id="s4">
+        <div class="sec-intro" id="s4Intro">
+          <div class="sec-num">04</div>
+          <div class="sec-title"><span>CONCLUSIONES</span></div>
+          <div class="chip sec-sub">Biología · Sistemas · Energía</div>
+        </div>
+
+        <!-- Fase A: protección biológica -->
+        <div class="kin k1" id="k1">PROTECCIÓN</div>
+        <div class="kin k2" id="k2"><span>BIOLÓGICA</span></div>
+        <svg class="shield" id="shield" viewBox="0 0 200 230" width="290" height="334">
+          <path d="M100 12 L184 46 V112 C184 166 146 204 100 220 C54 204 16 166 16 112 V46 Z" fill="#0284C7" stroke="#141413" stroke-width="10" stroke-linejoin="round"/>
+          <path id="shieldCheck" pathLength="1" d="M58 116 L90 148 L146 86" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 1" stroke-dashoffset="1"/>
+        </svg>
+
+        <div class="card stat" id="st1"><div class="stat-num">0</div><div class="stat-txt">pacientes<br>en riesgo</div></div>
+        <div class="card stat" id="st2"><div class="stat-num">0</div><div class="stat-txt">animales de<br>experimentación</div></div>
+        <div class="card stat stat-orange" id="st3"><div class="stat-num">∞</div><div class="stat-txt">repeticiones<br>de práctica</div></div>
+
+        <div class="kin-line" id="kline">ENTRENAMIENTO QUIRÚRGICO <span>SIN RIESGO</span></div>
+        <div class="verbs" id="verbs">
+          <span class="chip">✓ equivocarse</span><span class="chip">✓ sentir el hueso</span><span class="chip">✓ repetir</span><span class="chip blue">✓ dominar la técnica</span>
+        </div>
+
+        <!-- Fase B: código → energía -->
+        <div class="chip ink s4chip" id="s4chip">En Ingeniería de Sistemas…</div>
+        <div class="kin b1" id="b1">EL CÓDIGO</div>
+        <div class="kin b2" id="b2">CONTROLA</div>
+        <div class="kin b3" id="b3"><span>ENERGÍA MECÁNICA REAL</span></div>
+
+        <div class="card code-card" id="codeCard">
+          <div class="code-head"><i></i><i></i><i></i><span>haptic_loop.c</span></div>
+          <pre id="codeTyped"></pre>
+        </div>
+        <div class="big-arrow" id="bigArrow">➜</div>
+        <div class="card motor-card" id="motorCard">
+          <svg viewBox="0 0 520 210" width="520" height="210">
+            <rect x="14" y="40" width="210" height="150" rx="24" fill="#141413"/>
+            <rect x="224" y="100" width="46" height="30" fill="#141413"/>
+            <g id="rotor">
+              <circle cx="119" cy="115" r="56" fill="#F4F4F0" stroke="#F9572A" stroke-width="8"/>
+              <path d="M119 63 V167 M67 115 H171 M82 78 L156 152 M156 78 L82 152" stroke="#141413" stroke-width="7" stroke-linecap="round"/>
+              <circle cx="119" cy="115" r="14" fill="#F9572A" stroke="#141413" stroke-width="5"/>
+            </g>
+            <g id="fArrow">
+              <rect x="284" y="99" width="150" height="32" rx="6" fill="#F9572A" stroke="#141413" stroke-width="5"/>
+              <polygon points="430,80 500,115 430,150" fill="#F9572A" stroke="#141413" stroke-width="5" stroke-linejoin="round"/>
+            </g>
+            <text id="fRead" x="296" y="66" font-family="JetBrains Mono" font-weight="800" font-size="32" fill="#141413">F = −0.0 N</text>
+          </svg>
+          <div class="motor-chips" id="motorChips">
+            <span class="chip">retraso → vibración</span><span class="chip">bug → golpe</span><span class="chip orange">determinista · rápido · seguro</span>
+          </div>
+        </div>
+
+        <!-- Fase C: cierre -->
+        <div class="final" id="final">
+          <div class="final-ms" id="finalMs">1 ms</div>
+          <div class="final-bar" id="finalBar"></div>
+          <div class="final-sub" id="finalSub">LA BARRERA DE <b>1 kHz</b></div>
+          <div class="final-thanks" id="finalThanks">¡Gracias!</div>
+          <div class="chip final-cred" id="finalCred">Kevin Oliveros &amp; Daniela Cubides · Física Mecánica × Ingeniería de Sistemas</div>
+        </div>
+      </section>
+
+      <!-- Cortinillas de transición -->
+      <div class="wipe w1"></div><div class="wipe w2"></div><div class="wipe w3"></div>
+    </div>
+  </div>
+
+  <!-- ===================================================== CONTROLES -->
+  <div id="controls">
+    <button class="ctl-btn primary" id="btnPlay" title="Play / Pausa (Espacio)">
+      <svg class="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>
+      <svg class="i-pause" viewBox="0 0 24 24"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg>
+    </button>
+    <button class="ctl-btn" id="btnRestart" title="Reiniciar (R)">
+      <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
+    </button>
+    <div class="time"><span id="tCur">00:00</span><span class="sep">/</span><span>04:30</span></div>
+    <div id="bar">
+      <div class="seg" style="left:0;width:18.519%">INTRO</div>
+      <div class="seg" style="left:18.519%;width:27.778%">TEORÍA</div>
+      <div class="seg" style="left:46.296%;width:33.333%">SIMULACIÓN</div>
+      <div class="seg" style="left:79.630%;width:20.370%">CONCLUSIONES</div>
+      <div id="barFill"></div>
+      <div id="barHead"></div>
+    </div>
+    <button class="ctl-btn text" id="btnSpeed" title="Velocidad de reproducción (V)">1×</button>
+    <button class="ctl-btn text on" id="btnPrompter" title="Teleprónter (T)">TELEPRÓNTER</button>
+    <button class="ctl-btn" id="btnFs" title="Pantalla completa (F)">
+      <svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>
+    </button>
+  </div>
+
+  <!-- ===================================================== TELEPRÓNTER -->
+  <div id="prompter">
+    <div class="pr-side">
+      <div class="pr-label">GUION EN VIVO</div>
+      <div class="pr-scene" id="prScene">ESCENA 1</div>
+      <div class="pr-next" id="prNext">siguiente en —</div>
+      <div class="pr-size">
+        <button id="prMinus" title="Texto más pequeño (-)">A−</button>
+        <button id="prPlus" title="Texto más grande (+)">A+</button>
+      </div>
+    </div>
+    <div class="pr-view"><div class="pr-track" id="prTrack"></div></div>
+  </div>
+</div>
+
+<!-- Librerías locales (funciona 100 % sin internet) con respaldo CDN -->
+<script src="vendor/gsap.min.js"></script>
+<script>window.gsap || document.write('<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"><\/script>')</script>
+<script src="vendor/katex/katex.min.js"></script>
+<script>window.katex || document.write('<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"><\/script>')</script>
+<script src="js/script.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
